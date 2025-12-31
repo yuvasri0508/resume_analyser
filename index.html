@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Resume Analyzer</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+    margin:0;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    color:white;
+}
+.container{
+    width:720px;
+    background:#1e1e1e;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 0 30px rgba(0,0,0,0.9);
+}
+h1{text-align:center;color:#00e5ff;}
+
+select,input,textarea,button{
+    width:100%;
+    height:45px;
+    margin:8px 0;
+    padding:10px;
+    background:#2a2a2a;
+    color:white;
+    border:none;
+    border-radius:6px;
+}
+textarea{height:70px;resize:none;}
+button{
+    background:#00e5ff;
+    color:black;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+#output{
+    margin-top:12px;
+    background:#2a2a2a;
+    padding:15px;
+    border-radius:8px;
+    max-height:320px;
+    overflow-y:auto;
+}
+
+h3{color:#00e5ff;margin-bottom:5px;}
+.score{font-size:22px;color:#76ff03;font-weight:bold;}
+.badge{padding:4px 10px;border-radius:12px;font-weight:bold;}
+.good{background:#4caf50;}
+.average{background:#ffc107;color:black;}
+.poor{background:#f44336;}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h1>AI Resume Analyzer</h1>
+
+<select id="jobRole">
+<option value="">Select Engineering Job Role</option>
+
+<!-- SOFTWARE / IT -->
+<option value="software">Software Engineer</option>
+<option value="frontend">Front-End Developer</option>
+<option value="backend">Back-End Developer</option>
+<option value="fullstack">Full Stack Developer</option>
+<option value="web">Web Developer</option>
+<option value="mobile">Mobile App Developer</option>
+<option value="game">Game Developer</option>
+<option value="system">System Engineer</option>
+
+<!-- AI / DATA -->
+<option value="data">Data Analyst</option>
+<option value="datascience">Data Scientist</option>
+<option value="ml">Machine Learning Engineer</option>
+<option value="ai">AI Engineer</option>
+<option value="bigdata">Big Data Engineer</option>
+
+<!-- CLOUD / SECURITY -->
+<option value="cloud">Cloud Engineer</option>
+<option value="devops">DevOps Engineer</option>
+<option value="cyber">Cyber Security Engineer</option>
+<option value="network">Network Engineer</option>
+
+<!-- CORE ENGINEERING -->
+<option value="ece">Electronics Engineer (ECE)</option>
+<option value="eee">Electrical Engineer (EEE)</option>
+<option value="mechanical">Mechanical Engineer</option>
+<option value="civil">Civil Engineer</option>
+
+<!-- EMBEDDED / EMERGING -->
+<option value="embedded">Embedded Systems Engineer</option>
+<option value="iot">IoT Engineer</option>
+<option value="robotics">Robotics Engineer</option>
+<option value="blockchain">Blockchain Engineer</option>
+<option value="arvr">AR / VR Engineer</option>
+
+<!-- TESTING / DATABASE -->
+<option value="qa">QA / Test Engineer</option>
+<option value="database">Database Engineer</option>
+<option value="erp">ERP / SAP Engineer</option>
+<option value="semiconductor">Semiconductor Engineer</option>
+</select>
+
+<input type="file" id="resume" accept=".txt,.pdf,.html">
+<button onclick="analyzeResume()">Analyze Resume</button>
+
+<div id="output"></div>
+</div>
+
+<script>
+const roleSkills={
+software:["java","python","data structures","sql","git"],
+frontend:["html","css","javascript","react"],
+backend:["node","java","python","sql"],
+fullstack:["html","css","javascript","react","node","sql"],
+web:["html","css","javascript"],
+mobile:["android","java","flutter"],
+game:["unity","c#"],
+system:["linux","os","networking"],
+
+data:["python","sql","excel"],
+datascience:["python","machine learning","pandas"],
+ml:["python","machine learning","tensorflow"],
+ai:["python","deep learning"],
+bigdata:["hadoop","spark"],
+
+cloud:["aws","cloud","linux"],
+devops:["docker","kubernetes","linux"],
+cyber:["network security","ethical hacking"],
+network:["routing","switching"],
+
+ece:["vlsi","embedded systems"],
+eee:["power systems","electrical machines"],
+mechanical:["autocad","solidworks"],
+civil:["autocad","construction planning"],
+
+embedded:["embedded c","microcontroller"],
+iot:["iot","sensors"],
+robotics:["robotics","control systems"],
+blockchain:["blockchain","solidity"],
+arvr:["unity","vr"],
+
+qa:["testing","test cases"],
+database:["sql","database"],
+erp:["sap","erp"],
+semiconductor:["vlsi","semiconductor"]
+};
+
+const roleAdvice={
+software:"Practice DSA and build backend projects.",
+frontend:"Improve UI skills and React projects.",
+backend:"Develop APIs and database systems.",
+fullstack:"Build end-to-end applications.",
+web:"Create responsive portfolio websites.",
+mobile:"Develop Android or Flutter apps.",
+game:"Build small games using Unity.",
+system:"Learn OS and networking concepts.",
+
+data:"Practice SQL and data analysis projects.",
+datascience:"Work on ML models with datasets.",
+ml:"Implement ML algorithms.",
+ai:"Build AI mini-projects.",
+bigdata:"Learn Hadoop and Spark basics.",
+
+cloud:"Practice cloud deployment.",
+devops:"Work with CI/CD and containers.",
+cyber:"Practice ethical hacking labs.",
+network:"Learn routing and protocols.",
+
+ece:"Work on electronics projects.",
+eee:"Practice electrical design.",
+mechanical:"Create CAD and design projects.",
+civil:"Work on AutoCAD and planning.",
+
+embedded:"Develop firmware projects.",
+iot:"Build IoT sensor projects.",
+robotics:"Work on automation systems.",
+blockchain:"Create smart contracts.",
+arvr:"Build AR/VR applications.",
+
+qa:"Practice manual testing.",
+database:"Design and optimize databases.",
+erp:"Learn SAP modules.",
+semiconductor:"Study VLSI fundamentals."
+};
+
+function analyzeResume(){
+    const role=jobRole.value;
+    const file=resume.files[0];
+    const out=document.getElementById("output");
+
+    if(!role||!file){
+        out.innerHTML="<p>Please select job role and upload resume</p>";
+        return;
+    }
+
+    const reader=new FileReader();
+    reader.onload=()=>{
+        const text=reader.result.toLowerCase();
+        const skills=roleSkills[role];
+        let found=[],missing=[];
+
+        skills.forEach(s=>text.includes(s)?found.push(s):missing.push(s));
+
+        const score=Math.round(found.length/skills.length*100);
+
+        let level,badge;
+        if(score>=70){level="GOOD";badge="good";}
+        else if(score>=40){level="AVERAGE";badge="average";}
+        else{level="POOR";badge="poor";}
+
+        const sections={
+            skills:text.includes("skill"),
+            projects:text.includes("project"),
+            education:text.includes("education"),
+            experience:text.includes("experience")
+        };
+
+        let suggestions=[];
+        if(level==="GOOD") suggestions.push("Resume is strong. Start applying for jobs.");
+        if(level==="AVERAGE") suggestions.push("Improve skills and add more projects.");
+        if(level==="POOR") suggestions.push("Focus on fundamentals and beginner projects.");
+
+        if(!sections.projects) suggestions.push("Add a Projects section.");
+        if(!sections.experience) suggestions.push("Add internship or experience section.");
+        missing.forEach(m=>suggestions.push("Learn or add experience in "+m+"."));
+        suggestions.push(roleAdvice[role]);
+
+        out.innerHTML=`
+        <h3>ATS Score</h3>
+        <p class="score">${score}% <span class="badge ${badge}">${level}</span></p>
+
+        <h3>Resume Sections</h3>
+        <p>
+        Skills: ${sections.skills?"✔":"❌"} |
+        Projects: ${sections.projects?"✔":"❌"} |
+        Education: ${sections.education?"✔":"❌"} |
+        Experience: ${sections.experience?"✔":"❌"}
+        </p>
+
+        <h3>Skills Found</h3>
+        <p>${found.join(", ")||"None"}</p>
+
+        <h3>Missing Skills</h3>
+        <p>${missing.join(", ")}</p>
+
+        <h3>Suggestions</h3>
+        <ul>${suggestions.map(s=>`<li>${s}</li>`).join("")}</ul>
+        `;
+    };
+    reader.readAsText(file);
+}
+</script>
+
+</body>
+</html>
